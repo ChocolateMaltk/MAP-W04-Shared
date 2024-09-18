@@ -19,9 +19,18 @@
     the last one though.</string>
     <string name="coffee_list">Coffee List</string>
     <string name="back_button_label">Back</string>
-    <item name="coffeeDetail" type="id"/>
-
+    <item name="coffeeDetail" type="id" />
     <string name="nav_header_desc">Navigation header</string>
     <string name="menu_coffee">Coffee List</string>
     <string name="menu_favorites">Favorite Coffee</string>
+    <string name="coffeeStringed">Coffee</string>
+    <string name="cafeStringed">Cafe</string>
+    <string name="starbucks_title">Starbucks</string>
+    <string name="starbucks_desc">Starbucks Corporation is an American chain of coffee</string>
+    <string name="janjijiwa_title">JANJI JIWA</string>
+    <string name="janjijiwa_desc">It is undeniable that Janji Jiwa have to spread to various countries
+        because of the top notch Coffee.</string>
+    <string name="kopikenangan_title">KOPI KENANGAN</string>
+    <string name="kopikenangan_desc">At Kopi Kenangan, their dream is to serve high quality coffee
+        around Indonesia and the World.</string>
 </resources>
