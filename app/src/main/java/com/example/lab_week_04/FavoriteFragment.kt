@@ -1,32 +1,32 @@
 package com.example.lab_week_04
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.navigation.Navigation
+import android.widget.ImageButton
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+private const val PREF_NAME = "favorite_coffees"
+private const val FAVORITES_KEY = "favorites"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FavoriteFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class FavoriteFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    private lateinit var favoriteItems: MutableSet<Int>
+    private lateinit var favoriteAdapter: FavoriteAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param2 = it.getString(ARG_PARAM2)
-            param1 = it.getString(ARG_PARAM1)
-        }
+
+        // Retrieve the favorites from SharedPreferences
+        val sharedPrefs = requireActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        favoriteItems = getFavorites(sharedPrefs)
     }
 
     override fun onCreateView(
@@ -34,26 +34,101 @@ class FavoriteFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_favorite, container, false)
+        val rootView = inflater.inflate(R.layout.fragment_favorite, container, false)
+
+        // Set up RecyclerView to display the favorite items
+        val recyclerView = rootView.findViewById<RecyclerView>(R.id.favorites_recycler_view)
+        recyclerView.layoutManager = LinearLayoutManager(context)
+
+        favoriteAdapter = FavoriteAdapter(favoriteItems.toList(),
+            onFavoriteRemoved = { coffeeId ->
+                removeFavorite(coffeeId)
+            },
+            onCoffeeClicked = { coffeeId ->
+                navigateToDetail(coffeeId)
+            }
+        )
+        recyclerView.adapter = favoriteAdapter
+
+        return rootView
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment CafeFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FavoriteFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    private fun getFavorites(sharedPrefs: android.content.SharedPreferences): MutableSet<Int> {
+        val favoriteStrings = sharedPrefs.getStringSet(FAVORITES_KEY, emptySet()) ?: emptySet()
+        return favoriteStrings.map { it.toInt() }.toMutableSet()
+    }
+
+    private fun removeFavorite(coffeeId: Int) {
+        // Remove the item from SharedPreferences
+        val sharedPrefs = requireActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val favorites = getFavorites(sharedPrefs)
+        favorites.remove(coffeeId)
+        sharedPrefs.edit().putStringSet(FAVORITES_KEY, favorites.map { it.toString() }.toSet()).apply()
+
+        // Update the list and notify the adapter
+        favoriteItems.remove(coffeeId)
+        favoriteAdapter.updateItems(favoriteItems.toList())
+
+        Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun navigateToDetail(coffeeId: Int) {
+        // Navigate to the detail page using Navigation component
+        val bundle = Bundle().apply {
+            putInt(DetailFragment.COFFEE_ID, coffeeId)
+        }
+        Navigation.findNavController(requireView())
+            .navigate(R.id.action_favoriteFragment_to_detailFragment, bundle)
+    }
+
+    class FavoriteAdapter(
+        private var items: List<Int>,
+        private val onFavoriteRemoved: (Int) -> Unit,
+        private val onCoffeeClicked: (Int) -> Unit
+    ) : RecyclerView.Adapter<FavoriteAdapter.ViewHolder>() {
+
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val favoriteTitle: TextView = view.findViewById(R.id.favorite_title)
+            val removeFavoriteButton: ImageButton = view.findViewById(R.id.remove_favorite_button)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.favorite_item_layout, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val itemId = items[position]
+            holder.favoriteTitle.text = getCoffeeTitleById(itemId, holder.itemView.context)
+
+            // Set click listener for the coffee title (to navigate to detail page)
+            holder.favoriteTitle.setOnClickListener {
+                onCoffeeClicked(itemId)
             }
+
+            // Set click listener for the remove favorite button
+            holder.removeFavoriteButton.setOnClickListener {
+                onFavoriteRemoved(itemId)
+            }
+        }
+
+        override fun getItemCount(): Int = items.size
+
+        fun updateItems(newItems: List<Int>) {
+            this.items = newItems
+            notifyDataSetChanged()
+        }
+
+        private fun getCoffeeTitleById(id: Int, context: Context): String {
+            return when (id) {
+                R.id.affogato -> context.getString(R.string.affogato_title)
+                R.id.americano -> context.getString(R.string.americano_title)
+                R.id.latte -> context.getString(R.string.latte_title)
+                R.id.fizzy_black -> context.getString(R.string.fizzy_title)
+                R.id.beer_coffee -> context.getString(R.string.beerCoffee_title)
+                else -> context.getString(R.string.unknown_coffee)
+            }
+        }
     }
 }

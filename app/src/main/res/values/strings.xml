@@ -18,7 +18,11 @@
     <string name="beerCoffee_desc">Yes, another carbonated coffee drink. This is more carbonated than
     the last one though.</string>
     <string name="coffee_list">Coffee List</string>
+    <string name="unknown_coffee">Unknown Coffee</string>
     <string name="back_button_label">Back</string>
+    <string name="favorite_string_placeholder">Favorite</string>
+    <string name="add_favorite">Favorite</string>
+    <string name="remove_favorite">Remove Favorite</string>
     <item name="coffeeDetail" type="id" />
     <string name="nav_header_desc">Navigation header</string>
     <string name="menu_coffee">Coffee List</string>

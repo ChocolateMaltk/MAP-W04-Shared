@@ -1,17 +1,18 @@
 package com.example.lab_week_04
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.navigation.Navigation
-import com.example.lab_week_04.R
 
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+private const val PREF_NAME = "favorite_coffees"
+private const val FAVORITES_KEY = "favorites"
 
 class DetailFragment : Fragment() {
 
@@ -19,6 +20,7 @@ class DetailFragment : Fragment() {
     private var param2: String? = null
     private lateinit var coffeeTitle: TextView
     private lateinit var coffeeDesc: TextView
+    private lateinit var favoriteButton: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,15 +38,22 @@ class DetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         coffeeTitle = view.findViewById(R.id.coffee_title)
         coffeeDesc = view.findViewById(R.id.coffee_desc)
+        favoriteButton = view.findViewById(R.id.fav_button)
 
-        val coffeeId = arguments?.getInt(ListFragment.COFFEE_ID) ?: R.id.affogato
+        val coffeeId = arguments?.getInt(COFFEE_ID) ?: R.id.affogato
         setCoffeeData(coffeeId)
 
-        view.findViewById<Button>(R.id.back_button).setOnClickListener {
+        view.findViewById<View>(R.id.back_button).setOnClickListener {
             Navigation.findNavController(view).navigateUp()
         }
-    }
 
+        updateFavoriteButton(coffeeId)
+
+        // Handle adding/removing favorite
+        favoriteButton.setOnClickListener {
+            toggleFavorite(coffeeId)
+        }
+    }
 
     private fun setCoffeeData(id: Int) {
         when (id) {
@@ -75,7 +84,41 @@ class DetailFragment : Fragment() {
         }
     }
 
+    private fun toggleFavorite(coffeeId: Int) {
+        val sharedPrefs = requireActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val favorites = getFavorites(sharedPrefs)
+
+        if (favorites.contains(coffeeId)) {
+            favorites.remove(coffeeId)
+            Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show()
+            favoriteButton.setImageResource(R.drawable.unfavorite)  // Update to unfavorite icon
+        } else {
+            favorites.add(coffeeId)
+            Toast.makeText(requireContext(), "Added to favorites", Toast.LENGTH_SHORT).show()
+            favoriteButton.setImageResource(R.drawable.favorite)  // Update to favorite icon
+        }
+
+        // Save updated favorites to SharedPreferences
+        sharedPrefs.edit().putStringSet(FAVORITES_KEY, favorites.map { it.toString() }.toSet()).apply()
+    }
+
+    private fun updateFavoriteButton(coffeeId: Int) {
+        val sharedPrefs = requireActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val favorites = getFavorites(sharedPrefs)
+
+        if (favorites.contains(coffeeId)) {
+            favoriteButton.setImageResource(R.drawable.favorite)  // Show as favorited
+        } else {
+            favoriteButton.setImageResource(R.drawable.unfavorite)  // Show as unfavorited
+        }
+    }
+
+    private fun getFavorites(sharedPrefs: android.content.SharedPreferences): MutableSet<Int> {
+        val favoriteStrings = sharedPrefs.getStringSet(FAVORITES_KEY, emptySet()) ?: emptySet()
+        return favoriteStrings.map { it.toInt() }.toMutableSet()
+    }
+
     companion object {
-        private const val COFFEE_ID = "COFFEE_ID"
+        const val COFFEE_ID = "COFFEE_ID"
     }
 }
